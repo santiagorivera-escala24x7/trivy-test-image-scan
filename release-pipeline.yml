@@ -45,7 +45,7 @@ steps:
 
       # Download JUnit template
       mkdir -p contrib
-      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/pkg/report/templates/junit.tpl -o contrib/junit.tpl
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/junit.tpl -o contrib/junit.tpl
 
       # Generate report directory and timestamp
       DATETIME=$(date +"%Y-%m-%d-%H-%M-%S")
