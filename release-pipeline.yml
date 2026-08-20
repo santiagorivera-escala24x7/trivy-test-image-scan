@@ -15,7 +15,7 @@ variables:
   dockerContext: 'docker'
 
 steps:
-# Get AWS Account ID for ECR URI
+# Get AWS Account ID and set ECR URI
 - task: AWSCLI@1
   displayName: 'Get AWS Account ID'
   name: getAccountId
@@ -25,32 +25,25 @@ steps:
     awsCommand: 'sts'
     awsSubCommand: 'get-caller-identity'
     awsArguments: '--query Account --output text'
-
-- script: |
-    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-    ECR_URI="${ACCOUNT_ID}.dkr.ecr.$(awsRegion).amazonaws.com/$(ecrRepository)"
-    echo "##vso[task.setvariable variable=ecrUri]${ECR_URI}"
-    echo "##vso[task.setvariable variable=accountId]${ACCOUNT_ID}"
-    echo "ECR URI: ${ECR_URI}"
-  displayName: 'Set ECR URI'
-  env:
-    AWS_DEFAULT_REGION: $(awsRegion)
+    scriptType: 'inline'
+    inlineScript: |
+      ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      echo "##vso[task.setvariable variable=ecrUri]${ACCOUNT_ID}.dkr.ecr.$(awsRegion).amazonaws.com/$(ecrRepository)"
+      echo "##vso[task.setvariable variable=accountId]${ACCOUNT_ID}"
+      echo "Account ID: ${ACCOUNT_ID}"
 
 # Login to ECR
 - task: AWSCLI@1
-  displayName: 'Login to ECR'
+  displayName: 'Docker Login to ECR'
   inputs:
     awsCredentials: '$(awsServiceConnection)'
     regionName: '$(awsRegion)'
     awsCommand: 'ecr'
     awsSubCommand: 'get-login-password'
     awsArguments: '--region $(awsRegion)'
-
-- script: |
-    aws ecr get-login-password --region $(awsRegion) | docker login --username AWS --password-stdin $(accountId).dkr.ecr.$(awsRegion).amazonaws.com
-  displayName: 'Docker Login to ECR'
-  env:
-    AWS_DEFAULT_REGION: $(awsRegion)
+    scriptType: 'inline'
+    inlineScript: |
+      aws ecr get-login-password --region $(awsRegion) | docker login --username AWS --password-stdin $(accountId).dkr.ecr.$(awsRegion).amazonaws.com
 
 # Build Docker Image
 - script: |
