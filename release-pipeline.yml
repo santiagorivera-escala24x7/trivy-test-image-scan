@@ -43,8 +43,25 @@ steps:
       curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       trivy --version
 
-      # Scan image - fail on CRITICAL/HIGH/MEDIUM (respects .trivyignore for accepted CVEs)
-      #trivy image --exit-code 1 --severity CRITICAL,HIGH,MEDIUM --no-progress --ignorefile docker/.trivyignore $(ecrRepository):$(imageTag)
+      # Generate report directory and timestamp
+      DATETIME=$(date +"%Y-%m-%d-%H-%M-%S")
+      mkdir -p reports
+
+      # S3 bucket for Trivy reports
+      BUCKET="azdo-test-bucket-cloudformation-sample"
+
+      # Scan image - generate JUnit report and upload to S3
+      echo "Starting Trivy Scan"
+      trivy image --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
+        -o reports/trivyreport_${DATETIME}.xml \
+        --ignorefile docker/.trivyignore \
+        $(ecrRepository):$(imageTag) || true
+
+      # Upload report to S3
+      aws s3 cp reports/ s3://${BUCKET}/trivy/ --recursive --exclude "*" --include "trivyreport_*"
+
+      # Scan image - fail on CRITICAL/HIGH (respects .trivyignore for accepted CVEs)
+      trivy image --exit-code 1 --severity CRITICAL,HIGH --no-progress --ignorefile docker/.trivyignore $(ecrRepository):$(imageTag)
 
       # Push to ECR (only reaches here if scan passes)
       docker push ${ECR_URI}:$(imageTag)
@@ -66,3 +83,13 @@ steps:
       aws ecs update-service --cluster $(ecsCluster) --service $(ecsService) --task-definition ${NEW_REVISION} --force-new-deployment
 
       echo "Deployment complete!"
+
+# Publish Trivy JUnit report to Azure DevOps test results
+- task: PublishTestResults@2
+  displayName: 'Publish Trivy Scan Results'
+  condition: always()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'reports/trivyreport_*.xml'
+    testRunTitle: 'Trivy Vulnerability Scan'
+    failTaskOnFailedTests: false
