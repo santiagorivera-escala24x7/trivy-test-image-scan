@@ -8,7 +8,7 @@ variables:
   # Name of your AWS Service Connection created in Azure DevOps Settings
   awsServiceConnection: 'AWSOps'
   awsRegion: 'us-east-1'
-  stackName: 'azdo-test-s3-stack'
+  stackName: 'test-s3-stack'
 
 steps:
 # Deploy CloudFormation Stack to create the S3 Bucket
