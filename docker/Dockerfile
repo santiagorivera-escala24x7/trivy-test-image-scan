@@ -1,11 +1,8 @@
 FROM nginx:1.16.0
 
-# Vulnerable packages for Trivy scan testing
-# Remove these after testing!
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libssl1.1=1.1.1d-0+deb10u1 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Using old base image intentionally for Trivy scan testing
+# This image has known CRITICAL/HIGH CVEs
+# Remove and switch back to nginx:alpine after testing!
 
 # Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
