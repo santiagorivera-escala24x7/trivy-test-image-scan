@@ -1,0 +1,99 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  awsServiceConnection: 'AWSOps'
+  awsRegion: 'us-east-1'
+  ecrRepository: 'trivy-test-app'
+  ecsCluster: 'trivy-test-cluster'
+  ecsService: 'trivy-test-service'
+  imageTag: '$(Build.BuildId)'
+  dockerfilePath: 'docker/Dockerfile'
+  dockerContext: 'docker'
+
+steps:
+# Get AWS Account ID for ECR URI
+- task: AWSCLI@1
+  displayName: 'Get AWS Account ID'
+  name: getAccountId
+  inputs:
+    awsCredentials: '$(awsServiceConnection)'
+    regionName: '$(awsRegion)'
+    awsCommand: 'sts'
+    awsSubCommand: 'get-caller-identity'
+    awsArguments: '--query Account --output text'
+
+- script: |
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+    ECR_URI="${ACCOUNT_ID}.dkr.ecr.$(awsRegion).amazonaws.com/$(ecrRepository)"
+    echo "##vso[task.setvariable variable=ecrUri]${ECR_URI}"
+    echo "##vso[task.setvariable variable=accountId]${ACCOUNT_ID}"
+    echo "ECR URI: ${ECR_URI}"
+  displayName: 'Set ECR URI'
+  env:
+    AWS_DEFAULT_REGION: $(awsRegion)
+
+# Login to ECR
+- task: AWSCLI@1
+  displayName: 'Login to ECR'
+  inputs:
+    awsCredentials: '$(awsServiceConnection)'
+    regionName: '$(awsRegion)'
+    awsCommand: 'ecr'
+    awsSubCommand: 'get-login-password'
+    awsArguments: '--region $(awsRegion)'
+
+- script: |
+    aws ecr get-login-password --region $(awsRegion) | docker login --username AWS --password-stdin $(accountId).dkr.ecr.$(awsRegion).amazonaws.com
+  displayName: 'Docker Login to ECR'
+  env:
+    AWS_DEFAULT_REGION: $(awsRegion)
+
+# Build Docker Image
+- script: |
+    docker build -t $(ecrRepository):$(imageTag) -f $(dockerfilePath) $(dockerContext)
+    docker tag $(ecrRepository):$(imageTag) $(ecrUri):$(imageTag)
+    docker tag $(ecrRepository):$(imageTag) $(ecrUri):latest
+  displayName: 'Build Docker Image'
+
+# Install and Run Trivy Scan
+- script: |
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    trivy --version
+  displayName: 'Install Trivy'
+
+- script: |
+    trivy image --exit-code 1 --severity CRITICAL,HIGH --no-progress $(ecrRepository):$(imageTag)
+  displayName: 'Trivy Scan - Fail on CRITICAL/HIGH'
+  continueOnError: false
+
+# Push to ECR (only runs if Trivy scan passes)
+- script: |
+    docker push $(ecrUri):$(imageTag)
+    docker push $(ecrUri):latest
+  displayName: 'Push Image to ECR'
+
+# Update ECS Service
+- task: AWSCLI@1
+  displayName: 'Deploy to ECS - Force New Deployment'
+  inputs:
+    awsCredentials: '$(awsServiceConnection)'
+    regionName: '$(awsRegion)'
+    awsCommand: 'ecs'
+    awsSubCommand: 'update-service'
+    awsArguments: '--cluster $(ecsCluster) --service $(ecsService) --force-new-deployment'
+
+# Wait for deployment stability (optional, can timeout)
+- task: AWSCLI@1
+  displayName: 'Wait for ECS Service Stable'
+  inputs:
+    awsCredentials: '$(awsServiceConnection)'
+    regionName: '$(awsRegion)'
+    awsCommand: 'ecs'
+    awsSubCommand: 'wait'
+    awsArguments: 'services-stable --cluster $(ecsCluster) --services $(ecsService)'
+  timeoutInMinutes: 5
+  continueOnError: true
