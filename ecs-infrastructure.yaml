@@ -98,7 +98,24 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
-  # --- Security Group ---
+  # --- Security Groups ---
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ALB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-alb-sg'
+
   EcsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -108,13 +125,56 @@ Resources:
         - IpProtocol: tcp
           FromPort: !Ref ContainerPort
           ToPort: !Ref ContainerPort
-          CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: !Sub '${EnvironmentName}-ecs-sg'
+
+  # --- Application Load Balancer ---
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${EnvironmentName}-alb'
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref AlbSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-alb'
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${EnvironmentName}-tg'
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: ip
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-tg'
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
 
   # --- ECR Repository ---
   EcrRepository:
@@ -217,6 +277,7 @@ Resources:
   # --- ECS Service ---
   EcsService:
     Type: AWS::ECS::Service
+    DependsOn: HttpListener
     Properties:
       ServiceName: !Sub '${EnvironmentName}-service'
       Cluster: !Ref EcsCluster
@@ -231,6 +292,10 @@ Resources:
             - !Ref PublicSubnet2
           SecurityGroups:
             - !Ref EcsSecurityGroup
+      LoadBalancers:
+        - ContainerName: !Sub '${EnvironmentName}-container'
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
 
 Outputs:
   VpcId:
@@ -256,3 +321,11 @@ Outputs:
   EcrRepositoryArn:
     Description: ECR Repository ARN
     Value: !GetAtt EcrRepository.Arn
+
+  LoadBalancerUrl:
+    Description: ALB URL to access the website
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
+
+  LoadBalancerDnsName:
+    Description: ALB DNS Name
+    Value: !GetAtt LoadBalancer.DNSName
