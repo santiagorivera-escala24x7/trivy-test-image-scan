@@ -1,4 +1,4 @@
-FROM nginx:1.16.0
+FROM nginx:alpine
 
 # Using old base image intentionally for Trivy scan testing
 # This image has known CRITICAL/HIGH CVEs

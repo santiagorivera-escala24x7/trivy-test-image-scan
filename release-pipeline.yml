@@ -44,7 +44,7 @@ steps:
       trivy --version
 
       # Scan image - fail on CRITICAL/HIGH
-      trivy image --exit-code 1 --severity CRITICAL,HIGH --no-progress $(ecrRepository):$(imageTag)
+      trivy image --exit-code 1 --severity CRITICAL,HIGH,MEDIUM,LOW --no-progress $(ecrRepository):$(imageTag)
 
       # Push to ECR (only reaches here if scan passes)
       docker push ${ECR_URI}:$(imageTag)
