@@ -29,4 +29,4 @@ steps:
     regionName: '$(awsRegion)'
     awsCommand: 'cloudformation'
     awsSubCommand: 'deploy'
-    awsArguments: '--template-file ecs-infrastructure.yaml --stack-name $(ecsStackName) --capabilities CAPABILITY_NAMED_IAM --region $(awsRegion)'
+    awsArguments: '--template-file ecs-infrastructure.yaml --stack-name $(ecsStackName) --capabilities CAPABILITY_NAMED_IAM --parameter-overrides ContainerPort=3000 --region $(awsRegion)'

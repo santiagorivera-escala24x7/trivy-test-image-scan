@@ -152,7 +152,6 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub '${EnvironmentName}-tg'
       Port: !Ref ContainerPort
       Protocol: HTTP
       VpcId: !Ref VPC
