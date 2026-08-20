@@ -1,0 +1,9 @@
+# Accepted vulnerabilities
+# Format: one CVE ID per line
+# Add a comment explaining why each is accepted
+
+# Example: not exploitable in our context (no user input to curl)
+# CVE-2023-38545
+
+# Example: low risk, fix not available yet
+# CVE-2024-1234
