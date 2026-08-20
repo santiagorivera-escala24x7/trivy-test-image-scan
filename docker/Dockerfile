@@ -1,4 +1,4 @@
-FROM nginx:1.21-alpine
+FROM nginx:alpine
 
 # Old nginx:1.21-alpine has known CRITICAL/HIGH CVEs in bundled libraries
 # (zlib, libssl, libcrypto, etc.)
