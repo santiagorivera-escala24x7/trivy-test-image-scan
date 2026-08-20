@@ -1,0 +1,23 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Name of your AWS Service Connection created in Azure DevOps Settings
+  awsServiceConnection: 'AWSOps'
+  awsRegion: 'us-east-1'
+  stackName: 'azdo-test-s3-stack'
+
+steps:
+# Deploy CloudFormation Stack to create the S3 Bucket
+- task: AWSCloudFormationCreateOrUpdateStack@1
+  displayName: 'Deploy S3 Bucket via CloudFormation'
+  inputs:
+    awsCredentials: '$(awsServiceConnection)'
+    regionName: '$(awsRegion)'
+    stackName: '$(stackName)'
+    templateSource: 'file'
+    templateFile: 's3-bucket.yaml'
+    onFailure: 'ROLLBACK'

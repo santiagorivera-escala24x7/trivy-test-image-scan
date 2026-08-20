@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Simple S3 Bucket for Azure DevOps testing
+
+Resources:
+  TestS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # S3 bucket names must be globally unique
+      BucketName: azdo-test-bucket-cloudformation-sample
+      Tags:
+        - Key: Environment
+          Value: Test
+        - Key: ManagedBy
+          Value: AzureDevOps
+
+Outputs:
+  BucketName:
+    Value: !Ref TestS3Bucket
+    Description: Name of the created S3 bucket
