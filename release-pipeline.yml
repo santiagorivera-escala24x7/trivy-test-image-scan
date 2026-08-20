@@ -15,78 +15,42 @@ variables:
   dockerContext: 'docker'
 
 steps:
-# Get AWS Account ID and set ECR URI
-- task: AWSCLI@1
-  displayName: 'Get AWS Account ID'
-  name: getAccountId
+# Single step using AWSShellScript to get credentials injected into the shell
+- task: AWSShellScript@1
+  displayName: 'Build, Scan, Push and Deploy'
   inputs:
     awsCredentials: '$(awsServiceConnection)'
     regionName: '$(awsRegion)'
-    awsCommand: 'sts'
-    awsSubCommand: 'get-caller-identity'
-    awsArguments: '--query Account --output text'
     scriptType: 'inline'
     inlineScript: |
+      set -e
+
+      # Get account ID
       ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-      echo "##vso[task.setvariable variable=ecrUri]${ACCOUNT_ID}.dkr.ecr.$(awsRegion).amazonaws.com/$(ecrRepository)"
-      echo "##vso[task.setvariable variable=accountId]${ACCOUNT_ID}"
+      ECR_URI="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/$(ecrRepository)"
       echo "Account ID: ${ACCOUNT_ID}"
+      echo "ECR URI: ${ECR_URI}"
 
-# Login to ECR
-- task: AWSCLI@1
-  displayName: 'Docker Login to ECR'
-  inputs:
-    awsCredentials: '$(awsServiceConnection)'
-    regionName: '$(awsRegion)'
-    awsCommand: 'ecr'
-    awsSubCommand: 'get-login-password'
-    awsArguments: '--region $(awsRegion)'
-    scriptType: 'inline'
-    inlineScript: |
-      aws ecr get-login-password --region $(awsRegion) | docker login --username AWS --password-stdin $(accountId).dkr.ecr.$(awsRegion).amazonaws.com
+      # Login to ECR
+      aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-# Build Docker Image
-- script: |
-    docker build -t $(ecrRepository):$(imageTag) -f $(dockerfilePath) $(dockerContext)
-    docker tag $(ecrRepository):$(imageTag) $(ecrUri):$(imageTag)
-    docker tag $(ecrRepository):$(imageTag) $(ecrUri):latest
-  displayName: 'Build Docker Image'
+      # Build Docker image
+      docker build -t $(ecrRepository):$(imageTag) -f $(dockerfilePath) $(dockerContext)
+      docker tag $(ecrRepository):$(imageTag) ${ECR_URI}:$(imageTag)
+      docker tag $(ecrRepository):$(imageTag) ${ECR_URI}:latest
 
-# Install and Run Trivy Scan
-- script: |
-    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-    trivy --version
-  displayName: 'Install Trivy'
+      # Install Trivy
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      trivy --version
 
-- script: |
-    trivy image --exit-code 1 --severity CRITICAL,HIGH --no-progress $(ecrRepository):$(imageTag)
-  displayName: 'Trivy Scan - Fail on CRITICAL/HIGH'
-  continueOnError: false
+      # Scan image - fail on CRITICAL/HIGH
+      trivy image --exit-code 1 --severity CRITICAL,HIGH --no-progress $(ecrRepository):$(imageTag)
 
-# Push to ECR (only runs if Trivy scan passes)
-- script: |
-    docker push $(ecrUri):$(imageTag)
-    docker push $(ecrUri):latest
-  displayName: 'Push Image to ECR'
+      # Push to ECR (only reaches here if scan passes)
+      docker push ${ECR_URI}:$(imageTag)
+      docker push ${ECR_URI}:latest
 
-# Update ECS Service
-- task: AWSCLI@1
-  displayName: 'Deploy to ECS - Force New Deployment'
-  inputs:
-    awsCredentials: '$(awsServiceConnection)'
-    regionName: '$(awsRegion)'
-    awsCommand: 'ecs'
-    awsSubCommand: 'update-service'
-    awsArguments: '--cluster $(ecsCluster) --service $(ecsService) --force-new-deployment'
+      # Update ECS service
+      aws ecs update-service --cluster $(ecsCluster) --service $(ecsService) --force-new-deployment
 
-# Wait for deployment stability (optional, can timeout)
-- task: AWSCLI@1
-  displayName: 'Wait for ECS Service Stable'
-  inputs:
-    awsCredentials: '$(awsServiceConnection)'
-    regionName: '$(awsRegion)'
-    awsCommand: 'ecs'
-    awsSubCommand: 'wait'
-    awsArguments: 'services-stable --cluster $(ecsCluster) --services $(ecsService)'
-  timeoutInMinutes: 5
-  continueOnError: true
+      echo "Deployment complete!"
