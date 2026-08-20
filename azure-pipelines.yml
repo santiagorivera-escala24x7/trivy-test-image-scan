@@ -5,7 +5,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  awsServiceConnection: 'AWS-ECR-Connection'
+  awsServiceConnection: 'AWSOps'
   awsRegion: 'us-east-1'
   stackName: 'azdo-test-s3-stack'
 
