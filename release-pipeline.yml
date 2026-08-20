@@ -43,6 +43,10 @@ steps:
       curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       trivy --version
 
+      # Download JUnit template
+      mkdir -p contrib
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/pkg/report/templates/junit.tpl -o contrib/junit.tpl
+
       # Generate report directory and timestamp
       DATETIME=$(date +"%Y-%m-%d-%H-%M-%S")
       mkdir -p reports
@@ -52,7 +56,7 @@ steps:
 
       # Scan image - generate JUnit report
       echo "Starting Trivy Scan"
-      trivy image --format template --template "@/usr/local/share/trivy/templates/junit.tpl" \
+      trivy image --format template --template "@contrib/junit.tpl" \
         -o reports/trivyreport_${DATETIME}.xml \
         --exit-code 1 --severity CRITICAL,HIGH \
         --ignorefile docker/.trivyignore \
