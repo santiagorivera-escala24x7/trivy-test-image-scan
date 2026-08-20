@@ -7,15 +7,26 @@ pool:
 variables:
   awsServiceConnection: 'AWSOps'
   awsRegion: 'us-east-1'
-  stackName: 'azdo-test-s3-stack'
+  s3StackName: 'azdo-test-s3-stack'
+  ecsStackName: 'azdo-test-ecs-stack'
 
 steps:
-# Deploy CloudFormation using the standard AWS CLI
+# Deploy S3 CloudFormation Stack
 - task: AWSCLI@1
-  displayName: 'Deploy CloudFormation Stack (AWS CLI)'
+  displayName: 'Deploy S3 Stack'
   inputs:
     awsCredentials: '$(awsServiceConnection)'
     regionName: '$(awsRegion)'
     awsCommand: 'cloudformation'
     awsSubCommand: 'deploy'
-    awsArguments: '--template-file s3-bucket.yaml --stack-name $(stackName) --region $(awsRegion)'
+    awsArguments: '--template-file s3-bucket.yaml --stack-name $(s3StackName) --region $(awsRegion)'
+
+# Deploy ECS Infrastructure (VPC + Cluster + nginx service)
+- task: AWSCLI@1
+  displayName: 'Deploy ECS Infrastructure Stack'
+  inputs:
+    awsCredentials: '$(awsServiceConnection)'
+    regionName: '$(awsRegion)'
+    awsCommand: 'cloudformation'
+    awsSubCommand: 'deploy'
+    awsArguments: '--template-file ecs-infrastructure.yaml --stack-name $(ecsStackName) --capabilities CAPABILITY_NAMED_IAM --region $(awsRegion)'
