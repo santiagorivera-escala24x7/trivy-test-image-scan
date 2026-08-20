@@ -65,6 +65,13 @@ steps:
       SCAN_EXIT=$?
       set -e
 
+      # Print scan results to pipeline logs
+      echo ""
+      echo "========== TRIVY SCAN RESULTS =========="
+      trivy image --severity CRITICAL,HIGH --no-progress --ignorefile docker/.trivyignore $(ecrRepository):$(imageTag) || true
+      echo "========================================"
+      echo ""
+
       # Upload report to S3 (always, even if scan found vulnerabilities)
       aws s3 cp reports/ s3://${BUCKET}/trivy/ --recursive --exclude "*" --include "trivyreport_*"
 
