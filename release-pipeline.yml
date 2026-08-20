@@ -56,12 +56,14 @@ steps:
 
       # Scan image - generate JUnit report
       echo "Starting Trivy Scan"
+      set +e
       trivy image --format template --template "@contrib/junit.tpl" \
         -o reports/trivyreport_${DATETIME}.xml \
         --exit-code 1 --severity CRITICAL,HIGH \
         --ignorefile docker/.trivyignore \
         $(ecrRepository):$(imageTag)
       SCAN_EXIT=$?
+      set -e
 
       # Upload report to S3 (always, even if scan found vulnerabilities)
       aws s3 cp reports/ s3://${BUCKET}/trivy/ --recursive --exclude "*" --include "trivyreport_*"
