@@ -1,11 +1,8 @@
-FROM nginx:alpine
+FROM nginx:1.21-alpine
 
-# Install old curl to introduce known vulnerabilities for Trivy testing
-# curl 8.12.1 has multiple HIGH/CRITICAL CVEs (CVE-2025-13034, CVE-2025-15224, etc.)
-# Remove after testing!
-RUN apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.21/main \
-    curl=8.12.1-r0 \
-    libcurl=8.12.1-r0
+# Old nginx:1.21-alpine has known CRITICAL/HIGH CVEs in bundled libraries
+# (zlib, libssl, libcrypto, etc.)
+# Switch back to nginx:alpine after testing!
 
 # Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
