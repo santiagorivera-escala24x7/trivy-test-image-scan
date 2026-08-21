@@ -7,9 +7,9 @@ pool:
 variables:
   awsServiceConnection: 'AWSOps'
   awsRegion: 'us-east-1'
-  ecrRepository: 'trivy-test-app'
-  ecsCluster: 'trivy-test-cluster'
-  ecsService: 'trivy-test-service'
+  ecrRepository: 'phoenix-test-app'
+  ecsCluster: 'phoenix-test-cluster'
+  ecsService: 'phoenix-test-service'
   imageTag: '$(Build.BuildId)'
   dockerfilePath: 'docker/Dockerfile'
   dockerContext: 'docker'
