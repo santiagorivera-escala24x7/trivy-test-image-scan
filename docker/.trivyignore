@@ -1,9 +1,80 @@
-# Accepted vulnerabilities
-# Format: one CVE ID per line
-# Add a comment explaining why each is accepted
+# Accepted vulnerabilities - no fix available in Debian Trixie yet
+# Review periodically and remove once patches are released
 
-# Example: not exploitable in our context (no user input to curl)
-# CVE-2023-38545
+# gzip: global buffer overflow in LZH decompression - awaiting Debian package
+CVE-2026-41992
 
-# Example: low risk, fix not available yet
-# CVE-2024-1234
+# libacl1: symlink traversal - fix requires acl >= 2.4.0, not in Trixie yet
+CVE-2026-54369
+
+# libcups2t64: OpenPrinting CUPS unauthenticated Print-Job - no patch available
+CVE-2026-34980
+
+# libglib2.0: integer underflow in D-Bus introspection XML (CRITICAL)
+CVE-2026-58016
+
+# libglib2.0: buffer over-read in gvs_tuple_is_normal
+CVE-2026-58010
+
+# libglib2.0: out-of-bounds read in g_date_time_get_ymd
+CVE-2026-58011
+
+# libglib2.0: buffer over-read in g_regex_replace with G_REGEX_RAW
+CVE-2026-58012
+
+# libglib2.0: buffer over-read in g_io_channel_read_line_backend
+CVE-2026-58013
+
+# libglib2.0: off-by-one in g_key_file_get_locale_string_list
+CVE-2026-58014
+
+# libglib2.0: path traversal in D-Bus DBUS_COOKIE_SHA1 SASL
+CVE-2026-58015
+
+# libsndfile1: integer overflow in ima_reader_init
+CVE-2026-37555
+
+# libssl3t64/openssl: DoS via unbounded memory growth in QUIC server
+CVE-2026-14456
+
+# libtiff6: DoS via large SamplesPerPixel tag
+CVE-2026-36849
+
+# libxml2: use-after-free in xmlParseInternalSubset (CRITICAL)
+CVE-2026-6653
+
+# ncurses: buffer overflow in infocmp analyze_string
+CVE-2025-69720
+
+# perl-base: incorrect regex processing (CRITICAL)
+CVE-2026-13221
+
+# perl-base: heap buffer overflow in regex compilation (CRITICAL)
+CVE-2026-8376
+
+# perl-base: Storable signed integer overflow (CRITICAL)
+CVE-2026-57433
+
+# perl-base: Archive::Tar symlink path traversal (CRITICAL)
+CVE-2026-42496
+
+# perl-base: Archive::Tar hardlink path traversal
+CVE-2026-42497
+
+# perl-base: IO::Compress arbitrary code execution
+CVE-2026-48962
+
+# perl-base: integer overflow in pack/unpack
+CVE-2026-57432
+
+# perl-base: Archive::Tar memory exhaustion
+CVE-2026-9538
+
+# wget: heap buffer overflow in convert_fname
+CVE-2026-58471
+
+# wget: heap buffer overflow in html_quote_string
+CVE-2026-58472
+
+# xdg-utils: mailto URI parsing bypass - package removed but may still appear
+CVE-2022-4055

@@ -1,11 +1,11 @@
 FROM debian:trixie-slim
 
-# Remediated version - all packages updated to fix known CVEs
-# For rollback, see Dockerfile.vulnerable
+# Match the same packages as phoenix-mid-hub-api-prod
+# Base: Debian Trixie with Node.js 26.5.0, OpenJDK 21, Chromium
 
 ARG NODE_VERSION=26.5.0
 
-# System packages - fully upgraded to latest available in Trixie
+# System packages (same as prod image)
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     ca-certificates \
     wget \
@@ -33,40 +33,21 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     && apt-get purge -y --auto-remove \
     && rm -rf /var/lib/apt/lists/*
 
-# Remove packages with unfixed CVEs that are not needed at runtime
-RUN apt-get update && apt-get remove -y --allow-remove-essential \
-    xdg-utils \
-    || true \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install Node.js (same version as prod)
 RUN wget -q "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
     && tar -xJf "node-v${NODE_VERSION}-linux-x64.tar.xz" -C /usr/local --strip-components=1 \
     && rm "node-v${NODE_VERSION}-linux-x64.tar.xz" \
     && node --version && npm --version
 
-# Install global npm packages with fixed versions
-# ws: 8.21.0 -> 8.21.0 (fixes CVE-2026-48779)
-# js-yaml: 4.3.0 -> 5.2.2 (fixes CVE-2026-59869, GHSA-5p4m)
-# pm2: 7.0.1 (no CVEs found)
-RUN npm install -g pm2@7.0.1 ws@8.21.0 js-yaml@5.2.2
+# Install same global npm packages as prod
+RUN npm install -g pm2@7.0.1 ws@8.21.0 js-yaml@4.3.0
 
 # Create app user
 RUN useradd -m -s /bin/bash node || true
 
 # Create a simple Express app to simulate the service
 WORKDIR /home/node/app
-
-# Install app dependencies with fixed versions
-# express: uses path-to-regexp - pin to fixed version
-# brace-expansion: 5.0.9 (fixes CVE-2026-13149, 14257, 69152)
-# ip-address: 10.3.1 (fixes CVE-2026-69192)
-# tar: 7.5.19 (fixes CVE-2026-59873, 59874)
-RUN npm init -y && npm install \
-    express@5.1.0 \
-    brace-expansion@5.0.9 \
-    ip-address@10.3.1 \
-    tar@7.5.19
+RUN npm init -y && npm install express@4.21.2
 
 COPY app.js /home/node/app/
 
