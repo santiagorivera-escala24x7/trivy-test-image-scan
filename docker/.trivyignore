@@ -108,5 +108,14 @@ CVE-2026-59874
 # ws: DoS via memory exhaustion from small fragments
 CVE-2026-48779
 
+# serialize-javascript: RCE via RegExp.flags and Date.prototype.toISOString
+GHSA-5c6j-r48x-rmvq
+
+# undici: DoS via unbounded memory growth in WebSocket (pm2 transitive dep)
+CVE-2026-12151
+
+# undici: info disclosure via malformed Cache-Control directives
+CVE-2026-13697
+
 # path-to-regexp: DoS via catastrophic backtracking
 CVE-2026-4867

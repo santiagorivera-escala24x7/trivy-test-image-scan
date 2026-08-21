@@ -70,7 +70,7 @@ RUN cd /home/node/app && \
 
 # Override vulnerable packages in global pm2 install
 RUN cd /usr/local/lib/node_modules/pm2 && \
-    npm install ws@8.21.0 js-yaml@5.2.2 tar@7.5.19 undici@8.5.0 --save 2>/dev/null || true
+    npm install ws@8.21.0 js-yaml@5.2.2 tar@7.5.19 undici@8.9.0 serialize-javascript@7.0.3 --save 2>/dev/null || true
 
 COPY app.js /home/node/app/
 
