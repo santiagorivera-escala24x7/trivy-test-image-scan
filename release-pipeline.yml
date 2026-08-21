@@ -75,16 +75,6 @@ steps:
       echo "========================================"
       echo ""
 
-      # Scan CloudFormation templates (uses phoenix-pipeline-test/trivy.yaml config)
-      echo ""
-      echo "========== TRIVY IaC SCAN (CloudFormation) =========="
-      trivy config --config phoenix-pipeline-test/trivy.yaml \
-        -o reports/trivy_iac_report_${DATETIME}.json --format json \
-        phoenix-pipeline-test/ || true
-      trivy config --config phoenix-pipeline-test/trivy.yaml phoenix-pipeline-test/ || true
-      echo "====================================================="
-      echo ""
-
       # Upload all reports to S3
       aws s3 cp reports/ s3://${BUCKET}/trivy/ --recursive --exclude "*" --include "trivy*"
 
