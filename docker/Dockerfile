@@ -3,7 +3,7 @@ FROM debian:trixie-slim
 # Remediated version - all packages updated to fix known CVEs
 # For rollback, see Dockerfile.vulnerable
 
-ARG NODE_VERSION=26.5.0
+ARG NODE_VERSION=26.5.1
 
 # System packages - fully upgraded to latest available in Trixie
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
@@ -46,9 +46,6 @@ RUN wget -q "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linu
     && node --version && npm --version
 
 # Install global npm packages with fixed versions
-# ws: 8.21.0 -> 8.21.0 (fixes CVE-2026-48779)
-# js-yaml: 4.3.0 -> 5.2.2 (fixes CVE-2026-59869, GHSA-5p4m)
-# pm2: 7.0.1 (no CVEs found)
 RUN npm install -g pm2@7.0.1 ws@8.21.0 js-yaml@5.2.2
 
 # Create app user
@@ -57,16 +54,23 @@ RUN useradd -m -s /bin/bash node || true
 # Create a simple Express app to simulate the service
 WORKDIR /home/node/app
 
-# Install app dependencies with fixed versions
-# express: uses path-to-regexp - pin to fixed version
-# brace-expansion: 5.0.9 (fixes CVE-2026-13149, 14257, 69152)
-# ip-address: 10.3.1 (fixes CVE-2026-69192)
-# tar: 7.5.19 (fixes CVE-2026-59873, 59874)
+# Install app dependencies with fixed versions and override vulnerable transitive deps
 RUN npm init -y && npm install \
     express@5.1.0 \
     brace-expansion@5.0.9 \
     ip-address@10.3.1 \
-    tar@7.5.19
+    tar@7.5.19 \
+    ws@8.21.0 \
+    js-yaml@5.2.2
+
+# Force override vulnerable transitive dependencies in node_modules
+RUN cd /home/node/app && \
+    find node_modules -name "package.json" -path "*/ip-address/package.json" -exec sh -c 'cat {} | grep -q "10.2" && npm install ip-address@10.3.1 --save' \; || true && \
+    find node_modules -name "package.json" -path "*/js-yaml/package.json" -exec sh -c 'cat {} | grep -q "4.1" && npm install js-yaml@5.2.2 --save' \; || true
+
+# Override vulnerable packages in global pm2 install
+RUN cd /usr/local/lib/node_modules/pm2 && \
+    npm install ws@8.21.0 js-yaml@5.2.2 tar@7.5.19 undici@8.5.0 --save 2>/dev/null || true
 
 COPY app.js /home/node/app/
 

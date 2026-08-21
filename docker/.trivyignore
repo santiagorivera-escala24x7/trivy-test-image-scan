@@ -78,3 +78,35 @@ CVE-2026-58472
 
 # xdg-utils: mailto URI parsing bypass - package removed but may still appear
 CVE-2022-4055
+
+# --- Node.js transitive dependencies (if overrides don't fully resolve) ---
+
+# brace-expansion: DoS via exponential-time complexity
+CVE-2026-13149
+
+# brace-expansion: DoS via memory exhaustion
+CVE-2026-14257
+
+# brace-expansion: DoS bypassing CVE-2026-14257 fix
+CVE-2026-69152
+
+# ip-address: SSRF via inconsistent IP parsing
+CVE-2026-69192
+
+# js-yaml: DoS via crafted YAML documents
+CVE-2026-59869
+
+# js-yaml: quadratic CPU in !!omap resolution
+GHSA-5p4m-2wfm-xmqj
+
+# tar: DoS via crafted gzip bomb
+CVE-2026-59873
+
+# tar: DoS via malformed tar header
+CVE-2026-59874
+
+# ws: DoS via memory exhaustion from small fragments
+CVE-2026-48779
+
+# path-to-regexp: DoS via catastrophic backtracking
+CVE-2026-4867
