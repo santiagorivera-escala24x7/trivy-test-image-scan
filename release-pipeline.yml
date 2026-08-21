@@ -15,7 +15,7 @@ variables:
   dockerContext: 'docker'
 
 steps:
-# Single step using AWSShellScript to get credentials injected into the shell
+# Single step  AWSShellScript to get credentials injected into the shell
 - task: AWSShellScript@1
   displayName: 'Build, Scan, Push and Deploy'
   inputs:
