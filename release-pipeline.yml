@@ -99,7 +99,7 @@ steps:
       docker push ${ECR_URI}:latest
 
       # Register new task definition revision with the new image
-      TASK_FAMILY="trivy-test-task"
+      TASK_FAMILY="phoenix-test-task"
       CURRENT_TASK_DEF=$(aws ecs describe-task-definition --task-definition ${TASK_FAMILY} --query 'taskDefinition' --output json)
 
       # Update the image in the container definition and register new revision
