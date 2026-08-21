@@ -63,6 +63,13 @@ steps:
         --ignorefile docker/.trivyignore \
         $(ecrRepository):$(imageTag)
       SCAN_EXIT=$?
+
+      # Also generate JSON report
+      trivy image --format json \
+        -o reports/trivyreport_${DATETIME}.json \
+        --severity CRITICAL,HIGH \
+        --ignorefile docker/.trivyignore \
+        $(ecrRepository):$(imageTag) || true
       set -e
 
       # Print scan results to pipeline logs
