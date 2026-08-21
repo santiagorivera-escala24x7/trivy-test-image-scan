@@ -1,0 +1,23 @@
+# Trivy configuration for Docker image vulnerability scanning
+# Used by release-pipeline.yml
+
+scan:
+  scanners:
+    - vuln
+
+severity:
+  - CRITICAL
+  - HIGH
+
+vulnerability:
+  # Ignore unfixed vulnerabilities (optional - uncomment to only flag actionable CVEs)
+  # ignore-unfixed: true
+
+# Use .trivyignore for accepted risks
+ignorefile: docker/.trivyignore
+
+# Exit code 1 = fail the build on findings
+exit-code: 1
+
+# Output settings
+format: table

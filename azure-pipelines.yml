@@ -11,6 +11,16 @@ variables:
   ecsStackName: 'azdo-test-ecs-stack'
 
 steps:
+# Install Trivy and scan CloudFormation templates before deploying
+- script: |
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    trivy --version
+    echo ""
+    echo "========== TRIVY IaC SCAN (CloudFormation) =========="
+    trivy config --config trivy.yaml --severity CRITICAL,HIGH,MEDIUM .
+    echo "====================================================="
+  displayName: 'Trivy IaC Scan - CloudFormation Templates'
+
 # Deploy S3 CloudFormation Stack
 - task: AWSCLI@1
   displayName: 'Deploy S3 Stack'

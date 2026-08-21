@@ -1,0 +1,18 @@
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+exit-code: 1
+
+format: table
+
+misconfiguration:
+  include-non-failures: false
+  scanners:
+    - cloudformation
+
+ignorefile: ".trivyignore"
+
+vulnerability:
+  ignore-unfixed: true

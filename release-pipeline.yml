@@ -54,33 +54,39 @@ steps:
       # S3 bucket for Trivy reports
       BUCKET="azdo-test-bucket-cloudformation-sample"
 
-      # Scan image - generate JUnit report
+      # Scan image - generate JUnit report (uses docker/trivy.yaml config)
       echo "Starting Trivy Scan"
       set +e
-      trivy image --format template --template "@contrib/junit.tpl" \
+      trivy image --config docker/trivy.yaml --format template --template "@contrib/junit.tpl" \
         -o reports/trivyreport_${DATETIME}.xml \
-        --exit-code 1 --severity CRITICAL,HIGH \
-        --ignorefile docker/.trivyignore \
         $(ecrRepository):$(imageTag)
       SCAN_EXIT=$?
 
       # Also generate JSON report
-      trivy image --format json \
+      trivy image --config docker/trivy.yaml --format json \
         -o reports/trivyreport_${DATETIME}.json \
-        --severity CRITICAL,HIGH \
-        --ignorefile docker/.trivyignore \
         $(ecrRepository):$(imageTag) || true
       set -e
 
       # Print scan results to pipeline logs
       echo ""
-      echo "========== TRIVY SCAN RESULTS =========="
-      trivy image --severity CRITICAL,HIGH --no-progress --ignorefile docker/.trivyignore $(ecrRepository):$(imageTag) || true
+      echo "========== TRIVY IMAGE SCAN RESULTS =========="
+      trivy image --config docker/trivy.yaml $(ecrRepository):$(imageTag) || true
       echo "========================================"
       echo ""
 
-      # Upload report to S3 (always, even if scan found vulnerabilities)
-      aws s3 cp reports/ s3://${BUCKET}/trivy/ --recursive --exclude "*" --include "trivyreport_*"
+      # Scan CloudFormation templates (uses phoenix-pipeline-test/trivy.yaml config)
+      echo ""
+      echo "========== TRIVY IaC SCAN (CloudFormation) =========="
+      trivy config --config phoenix-pipeline-test/trivy.yaml \
+        -o reports/trivy_iac_report_${DATETIME}.json --format json \
+        phoenix-pipeline-test/ || true
+      trivy config --config phoenix-pipeline-test/trivy.yaml phoenix-pipeline-test/ || true
+      echo "====================================================="
+      echo ""
+
+      # Upload all reports to S3
+      aws s3 cp reports/ s3://${BUCKET}/trivy/ --recursive --exclude "*" --include "trivy*"
 
       # Fail the build if Trivy found CRITICAL/HIGH
       if [ $SCAN_EXIT -ne 0 ]; then
@@ -109,12 +115,12 @@ steps:
 
       echo "Deployment complete!"
 
-# Publish Trivy JUnit report to Azure DevOps test results
-- task: PublishTestResults@2
-  displayName: 'Publish Trivy Scan Results'
-  condition: always()
-  inputs:
-    testResultsFormat: 'JUnit'
-    testResultsFiles: 'reports/trivyreport_*.xml'
-    testRunTitle: 'Trivy Vulnerability Scan'
-    failTaskOnFailedTests: false
+# # Publish Trivy JUnit report to Azure DevOps test results
+# - task: PublishTestResults@2
+#   displayName: 'Publish Trivy Scan Results'
+#   condition: always()
+#   inputs:
+#     testResultsFormat: 'JUnit'
+#     testResultsFiles: 'reports/trivyreport_*.xml'
+#     testRunTitle: 'Trivy Vulnerability Scan'
+#     failTaskOnFailedTests: false
