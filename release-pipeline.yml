@@ -88,22 +88,7 @@ steps:
       docker push ${ECR_URI}:$(imageTag)
       docker push ${ECR_URI}:latest
 
-      # Register new task definition revision with the new image
-      TASK_FAMILY="phoenix-test-task"
-      CURRENT_TASK_DEF=$(aws ecs describe-task-definition --task-definition ${TASK_FAMILY} --query 'taskDefinition' --output json)
-
-      # Update the image in the container definition and register new revision
-      NEW_TASK_DEF=$(echo ${CURRENT_TASK_DEF} | jq \
-        --arg IMAGE "${ECR_URI}:$(imageTag)" \
-        '.containerDefinitions[0].image = $IMAGE | {family: .family, networkMode: .networkMode, requiresCompatibilities: .requiresCompatibilities, cpu: .cpu, memory: .memory, executionRoleArn: .executionRoleArn, taskRoleArn: .taskRoleArn, containerDefinitions: .containerDefinitions}')
-
-      NEW_REVISION=$(aws ecs register-task-definition --cli-input-json "${NEW_TASK_DEF}" --query 'taskDefinition.taskDefinitionArn' --output text)
-      echo "New task definition: ${NEW_REVISION}"
-
-      # Update ECS service to use the new task definition
-      aws ecs update-service --cluster $(ecsCluster) --service $(ecsService) --task-definition ${NEW_REVISION} --force-new-deployment
-
-      echo "Deployment complete!"
+      echo "Image pushed to ECR. CodePipeline will handle deployment via EventBridge trigger."
 
 # # Publish Trivy JUnit report to Azure DevOps test results
 # - task: PublishTestResults@2
