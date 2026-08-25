@@ -21,3 +21,6 @@ exit-code: 1
 
 # Output settings
 format: table
+
+vulnerability:
+  ignore-unfixed: true
