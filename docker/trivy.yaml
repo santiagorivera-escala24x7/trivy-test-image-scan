@@ -10,7 +10,7 @@ severity:
   - HIGH
 
 vulnerability:
-  # Ignore unfixed vulnerabilities (optional - uncomment to only flag actionable CVEs)
+  ignore-unfixed: true  # Ignore unfixed vulnerabilities (optional - uncomment to only flag actionable CVEs)
   # ignore-unfixed: true
 
 # Use .trivyignore for accepted risks
@@ -22,5 +22,4 @@ exit-code: 1
 # Output settings
 format: table
 
-vulnerability:
-  ignore-unfixed: true
+
